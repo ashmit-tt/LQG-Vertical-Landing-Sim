@@ -1,4 +1,18 @@
+# CMake and Build Artifacts
 build/
-.vscode/
+CMakeCache.txt
+CMakeFiles/
+*.cmake
+Makefile
+
+# Executables
 *.exe
 *.out
+*.app
+
+# Python Visualizer
+__pycache__/
+*.pyc
+
+# Telemetry Data 
+*.csv
