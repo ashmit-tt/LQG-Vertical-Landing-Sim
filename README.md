@@ -1,8 +1,18 @@
-# Project Overview: 1D Vertical Rocket Landing Simulator (LQG)
+# 1D Vertical Rocket Landing Simulator (LQG)
+
+A C++17 simulation of a 1D rocket landing system that combines
+Runge-Kutta physics integration, Kalman state estimation, and
+LQR optimal control. The project evolved from a PID-based
+physics validation test into a full LQG controller capable of
+handling sensor noise and reducing actuator chattering while
+achieving a soft landing.
+
+
+# Project Overview: 
 
 This project simulates a 1D vertical landing maneuver of a 1 kg rocket. The goal was for the vehicle to descend from 100 m and touch down at 0 m at near-zero velocity. 
 
-I initially built this to practice modern C++ memory management and validate my custom physics engine using a standard PID controller. However, the core of the project evolved into developing **Linear Quadratic Gaussian (LQG)** controller capable of handling real-world sensor noise and preventing actuator saturation.
+I initially built this to practice modern C++ memory management and validate my custom physics engine using a standard PID controller. However, the core of the project evolved into developing an LQG (Linear Quadratic Gaussian) control system consisting of a Kalman Filter state estimator and an LQR feedback controller. capable of handling real-world sensor noise and preventing actuator saturation.
 
 ## System Architecture
 * **Language:** C++17
@@ -31,7 +41,7 @@ In order to solve for my new LQR gains, I learned about Bryson's rule, that help
 $$Q_{ii} = \frac{1}{\text{maximum acceptable error}^2}$$
 $$R_{ii} = \frac{1}{\text{maximum acceptable control effort}^2}$$
 
-For this 1 kg rocket, I put strict physical constraints to protect the engine valves and ensure a soft touchdown:
+For this 1 kg rocket, I put control limits to reduce actuator chattering and ensure a soft touchdown::
 * **Max Altitude Error ($z_{max}$):** $10$ m
 * **Max Velocity Error ($v_{max}$):** $2$ m/s
 * **Max Thrust Variation ($u_{max}$):** $5$ N 
@@ -42,7 +52,7 @@ $$Q = \begin{bmatrix} \frac{1}{10^2} & 0 \\ 0 & \frac{1}{2^2} \end{bmatrix} = \b
 
 $$R = \begin{bmatrix} \frac{1}{5^2} \end{bmatrix} = \begin{bmatrix} 0.04 \end{bmatrix}$$
 
-By heavily penalizing the control effort ($R = 0.04$), the Continuous Algebraic Riccati Equation (CARE) solver is forced to prioritize engine safety over aggressive altitude corrections. This generated a new set of highly optimized, smooth feedback gains:
+By heavily penalizing the control effort ($R = 0.04$), the Continuous Algebraic Riccati Equation (CARE) solver is forced to prioritize smooth control effort over aggressive altitude corrections. This generated a new set of feedback gains that reduced control effort while maintaining stable landing performances:
 
 $$K = \begin{bmatrix} 0.5 & 2.69 \end{bmatrix}$$
 
@@ -50,6 +60,16 @@ Now, instead of fighting the sensor noise, the controller would use the gains to
 
 ## Final Results
 
-After implementing the Bryson tuned gain matricies, I was able to almost completely eliminate the actuator chattering. The rocket now optimizes a fuel-saving free fall, using throttles to catch itself without putting stress on the engine valves, and touches down at 0 meters, shown below.
+After implementing the Bryson tuned gain matricies, I was able to almost completely eliminate the actuator chattering. The rocket now optimizes a fuel-saving free fall, using throttles to catch itself without putting stress on the engine valves, and touches down at 0 meters after reaching an altitude of 0.1 m and a velocity of between -1 and 0 m/s, shown below.
 
-![Final Achieved Results (as of 6/10/26)](smooth_thrust.png)
+![Final Achieved Results (as of 6/15/26)](smooth_thrust_final.png)
+
+### Final Performance
+
+| Metric | Result |
+|----------|----------|
+| Landing Time | 31.36-34.04 s |
+| Touchdown Velocity | -0.10 m/s |
+| Final Altitude Error | 0.13 m |
+| Peak Thrust | 12.5014 N |
+

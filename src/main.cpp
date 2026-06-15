@@ -12,7 +12,7 @@
 int main() {
     StateVector state{100.0, 0.0}; //true actual state of the rocket
     double time{0.0};
-    double t_final{25.0};
+    double t_final{35.0};
     double current_thrust{ROCKET_MASS * GRAVITY};
 
     
@@ -37,15 +37,22 @@ int main() {
         double z_true{state[0]};
         double v_true{state[1]};
 
-        if (z_true <= 0.0) {
-            std::cout << "Touched the ground after " << std::fixed << std::setprecision(2) << time << "s\n";
-            break;
-        }
+        
+
 
         double z_measured{z_true + altimeter_noise.get_sample()}; //adds static to simulate real world scenarios in 1D
         StateVector est_state = kf.update(z_measured, current_thrust, DT);
         double z_est{est_state[0]};
         double v_est{est_state[1]};
+
+        //if rocket is within 10 cm of the ground and is falling slowly, cut engines and end simulation
+        if (z_est <= 0.10 && v_est < 0.0 && v_est > -1.0) {
+            z_true = 0.0;
+            v_true = 0.0;
+            current_thrust = 0.0;
+            std::cout << "Touched the ground after " << std::fixed << std::setprecision(2) << time << "s\n";
+            break;
+        }
 
         if (use_lqr) {
             StateVector error_state{z_est - TARGET_ALTITUDE, v_est - 0.0};
